@@ -1,0 +1,12 @@
+import { Box, Level, User } from '../types';
+const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+const stream = async function* (text: string): AsyncIterable<string> { let out=''; for (const ch of text) { await wait(18); out += ch; yield out; } };
+export interface OnDeviceAI { parseProfile(text:string):Promise<{skills:string[];level:Level}>; scoreFit(user:User,box:Box):Promise<{score:number;reasons:string[]}>; draftSprintPlan(box:Box):Promise<{day:string;items:string[]}[]>; icebreaker(box:Box):AsyncIterable<string>; dailyDigest(box:Box):AsyncIterable<string>; suggestEquity(members:User[]):Promise<Record<string,number>>; }
+export const mockAI: OnDeviceAI = {
+  async parseProfile(text) { await wait(900); const all=['React','Node','Python','Figma','Product','Research','SEO','AI/ML','Analytics','Branding']; const skills=all.filter(s=>text.toLowerCase().includes(s.toLowerCase())); return {skills:skills.length?skills:['Product','Research'],level:'Builder'}; },
+  async scoreFit(user, box) { await wait(700); const open=box.slots.filter(s=>!s.filledBy); const role=open.some(s=>s.role===user.role); const overlap=user.skills.filter(s=>box.idea?.toLowerCase().includes(s.toLowerCase())).length; const score=Math.min(97,Math.max(72,78+(role?8:0)+overlap*3+(user.hoursPerWeek>=10?4:0))); return {score,reasons:[role?'Your role completes the crew':'Your perspective adds useful range',`Your ${user.hoursPerWeek} hr rhythm matches the sprint pace`,'Shared builder mindset and complementary skills']}; },
+  async draftSprintPlan() { await wait(600); return [{day:'Days 1–3',items:['Align on the user and promise','Pick one measurable signal']},{day:'Days 4–7',items:['Prototype the happy path','Run three quick conversations']},{day:'Days 8–11',items:['Ship the smallest loop','Review evidence together']},{day:'Days 12–14',items:['Polish the demo','Decide: continue or reset']}]; },
+  icebreaker: (box) => stream(`AI prompt for ${box.name}: What is one tiny thing you could ship in the next 24 hours that would make this idea feel real?`),
+  dailyDigest: () => stream('Momentum is healthy: design is one decision ahead, build has a clear spike, and the next unlock is choosing one idea.'),
+  async suggestEquity(members) { await wait(700); const each=Math.floor(100/members.length); const remainder=100-(each*members.length); return Object.fromEntries(members.map((m,i)=>[m.id,each+(i===0?remainder:0)])); },
+};
